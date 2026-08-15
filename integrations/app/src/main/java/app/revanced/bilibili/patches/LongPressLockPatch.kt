@@ -3,8 +3,8 @@ package app.revanced.bilibili.patches
 import android.view.Gravity
 import android.view.MotionEvent
 import androidx.annotation.Keep
+import app.revanced.bilibili.patches.main.Player
 import app.revanced.bilibili.settings.Settings
-import app.revanced.bilibili.utils.Logger
 import app.revanced.bilibili.utils.Toasts
 import app.revanced.bilibili.utils.Utils
 import app.revanced.bilibili.utils.getFirstFieldByExactType
@@ -13,6 +13,7 @@ import com.bilibili.playerbizcommon.gesture.OnLongPressListener
 import com.bilibili.playerbizcommon.gesture.OnLongPressScrollListener
 import tv.danmaku.biliplayerv2.ScreenModeType
 import tv.danmaku.biliplayerv2.service.IControlContainerService
+import tv.danmaku.biliplayerv2.service.IPlayerCoreService
 import kotlin.math.abs
 
 @Keep
@@ -34,8 +35,8 @@ class LongPressLockPatch(
         val startY = downPress?.y ?: 0f
         val endX = movePress.x
         val endY = movePress.y
-        val deltaX = movePress.x - startX
-        val deltaY = movePress.y - startY
+        val deltaX = endX - startX
+        val deltaY = endY - startY
         val screenMode = playerControlContainer.getFirstFieldByExactType<IControlContainerService>().getScreenModeType()
         val context = Utils.getContext()
         val screenHeight = ScreenUtil.getScreenHeight(context)
@@ -46,6 +47,7 @@ class LongPressLockPatch(
         }
         
         if (abs(deltaY) >= abs(deltaX)
+            && endY - startY > 0
             && downPressCache != downPress
             && endY >= screenHeightMinusPadding
         ) {
@@ -60,6 +62,12 @@ class LongPressLockPatch(
                     downPressCache = downPress
                     isLocking = false
                     longPressListener.onLongPressEnd(movePress)
+                    val service = Player.current() as? IPlayerCoreService?
+                    val currentSpeed = service?.getPlaySpeed(false)
+                    val defaultSpeed = PlaybackSpeedPatch.defaultSpeed(1.0f)
+                    if (currentSpeed != defaultSpeed) {
+                        service?.setPlaySpeed(defaultSpeed)
+                    }
                     return false
                 }
             }
@@ -68,6 +76,7 @@ class LongPressLockPatch(
             && endY <= screenHeightMinusPadding
             && isLocking
         ) {
+            downPressCache = null
             isLocking = false
             return false
         }
