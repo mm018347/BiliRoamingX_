@@ -3,9 +3,10 @@ name: CI
 on:
   push:
     branches:
+      - main
       - 'feat/long_press_lock'
     paths-ignore:
-      #- '**.md'
+      # - '**.md'
       - '.github/**'
       - '!.github/workflows/*'
 
