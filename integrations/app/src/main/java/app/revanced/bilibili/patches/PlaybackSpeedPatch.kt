@@ -69,6 +69,18 @@ object PlaybackSpeedPatch {
 
     @Keep
     @JvmStatic
+    fun onSetPlaySpeed(speed: Float): Float {
+        val stackTrace = Throwable().stackTrace
+        return when {
+            stackTrace.any { it.methodName.contains("trySelect") } -> {
+                longPressSpeed(2.0f)
+            }
+            else -> speed
+        }
+    }
+
+    @Keep
+    @JvmStatic
     fun defaultSpeed(player: IMediaPlayer?, speed: Float): Float {
         // only apply to video, not apply to podcast
         if (player != null && player.videoSarNum <= 0) return speed
